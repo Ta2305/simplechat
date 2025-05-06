@@ -5,7 +5,7 @@ import urllib.request
 import urllib.error
 
 # FastAPI の URL
-FASTAPI_URL = "https://57b8-34-124-254-60.ngrok-free.app/v1/llm/prompt"
+FASTAPI_URL = "https://57b8-34-124-254-60.ngrok-free.app/generate"
 
 # モデルID（必要に応じて使用する）
 MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
