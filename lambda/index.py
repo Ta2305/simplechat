@@ -39,7 +39,7 @@ def lambda_handler(event, context):
         
         # FastAPIに送るリクエストペイロードを構築
         payload = {
-          "prompt": "messages,
+          "prompt": messages,
           "max_new_tokens": 512,
           "do_sample": true,
           "temperature": 0.7,
