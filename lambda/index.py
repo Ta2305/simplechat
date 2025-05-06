@@ -4,6 +4,28 @@ import os
 import boto3
 import re  # 正規表現モジュールをインポート
 from botocore.exceptions import ClientError
+import urllib.request
+def call_fastapi_llm(prompt, max_new_tokens=512, temperature=0.7, top_p=0.9):
+    url = "http://localhost:8501/generate"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "prompt": prompt,
+        "max_new_tokens": max_new_tokens,
+        "do_sample": True,
+        "temperature": temperature,
+        "top_p": top_p
+    }
+
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(), headers=headers, method="POST")
+
+    try:
+        with urllib.request.urlopen(req) as res:
+            res_body = res.read()
+            response_data = json.loads(res_body)
+            return response_data["generated_text"]
+    except Exception as e:
+        print("Error:", e)
+        return "エラー: 推論に失敗しました"
 
 
 # Lambda コンテキストからリージョンを抽出する関数
@@ -83,6 +105,7 @@ def lambda_handler(event, context):
         print("Calling Bedrock invoke_model API with payload:", json.dumps(request_payload))
         
         # invoke_model APIを呼び出し
+        """
         response = bedrock_client.invoke_model(
             modelId=MODEL_ID,
             body=json.dumps(request_payload),
@@ -99,7 +122,20 @@ def lambda_handler(event, context):
         
         # アシスタントの応答を取得
         assistant_response = response_body['output']['message']['content'][0]['text']
+        """
+
+        prompt_parts = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "user":
+                prompt_parts.append(f"ユーザー: {content}")
+            elif role == "assistant":
+                prompt_parts.append(f"アシスタント: {content}")
+        prompt = "\n".join(prompt_parts)
         
+        # FastAPI LLM に投げる
+        assistant_response = call_fastapi_llm(prompt)
         # アシスタントの応答を会話履歴に追加
         messages.append({
             "role": "assistant",
