@@ -39,7 +39,11 @@ def lambda_handler(event, context):
         
         # FastAPIに送るリクエストペイロードを構築
         payload = {
-            "messages": messages
+          "prompt": "messages,
+          "max_new_tokens": 512,
+          "do_sample": true,
+          "temperature": 0.7,
+          "top_p": 0.9
         }
         
         # JSON データをエンコード
@@ -54,60 +58,24 @@ def lambda_handler(event, context):
         request = urllib.request.Request(FASTAPI_URL, data=json_data, headers=headers, method='POST')
 
         try:
-            # レスポンスを受け取る
-            with urllib.request.urlopen(request) as response:
-                response_data = json.loads(response.read().decode())
-                print("FastAPI response:", json.dumps(response_data, default=str))
-            
-            # アシスタントの応答を取得
-            assistant_response = response_data.get('response')
-            if not assistant_response:
-                raise Exception("No response content from the model")
-            
-            # アシスタントの応答を会話履歴に追加
-            messages.append({
-                "role": "assistant",
-                "content": assistant_response
-            })
-            
-            # 成功レスポンスの返却
-            return {
-                "statusCode": 200,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-                    "Access-Control-Allow-Methods": "OPTIONS,POST"
-                },
-                "body": json.dumps({
-                    "success": True,
-                    "response": assistant_response,
-                    "conversationHistory": messages
-                })
-            }
-        
+            with urllib.request.urlopen(req) as res:
+                res_body = res.read()
+                res_json = json.loads(res_body.decode("utf-8"))
+    
+                # FastAPIのレスポンスに合わせて出力
+                answer = res_json.get("generated_text", "")
+                return {
+                    "statusCode": 200,
+                    "body": json.dumps({"completion": answer})
+                }
+    
         except urllib.error.HTTPError as e:
-            # HTTPエラーが発生した場合の処理
-            print(f"HTTP error occurred: {e.code} - {e.reason}")
-            raise Exception(f"HTTP error occurred: {e.code} - {e.reason}")
+            return {
+                "statusCode": e.code,
+                "body": json.dumps({"error": e.reason})
+            }
         except urllib.error.URLError as e:
-            # URLエラーが発生した場合の処理
-            print(f"URL error occurred: {e.reason}")
-            raise Exception(f"URL error occurred: {e.reason}")
-
-    except Exception as error:
-        print("Error:", str(error))
-        
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-                "Access-Control-Allow-Methods": "OPTIONS,POST"
-            },
-            "body": json.dumps({
-                "success": False,
-                "error": str(error)
-            })
-        }
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": str(e.reason)})
+            }
