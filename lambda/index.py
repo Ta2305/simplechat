@@ -58,7 +58,7 @@ def lambda_handler(event, context):
         request = urllib.request.Request(FASTAPI_URL, data=json_data, headers=headers, method='POST')
 
         try:
-            with urllib.request.urlopen(request) as res:
+            with urllib.request.urlopen(request, timeout=60) as res:
                 res_body = res.read()
                 res_json = json.loads(res_body.decode("utf-8"))
     
