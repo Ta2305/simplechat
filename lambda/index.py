@@ -39,11 +39,11 @@ def lambda_handler(event, context):
         
         # FastAPIに送るリクエストペイロードを構築
         payload = {
-          "prompt": messages,
-          "max_new_tokens": 512,
-          "do_sample": true,
-          "temperature": 0.7,
-          "top_p": 0.9
+            "prompt": messages,
+            "max_new_tokens": 512,
+            "do_sample": True,
+            "temperature": 0.7,
+            "top_p": 0.9
         }
         
         # JSON データをエンコード
@@ -58,7 +58,7 @@ def lambda_handler(event, context):
         request = urllib.request.Request(FASTAPI_URL, data=json_data, headers=headers, method='POST')
 
         try:
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(request) as res:
                 res_body = res.read()
                 res_json = json.loads(res_body.decode("utf-8"))
     
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
                     "statusCode": 200,
                     "body": json.dumps({"completion": answer})
                 }
-    
+
         except urllib.error.HTTPError as e:
             return {
                 "statusCode": e.code,
@@ -79,3 +79,9 @@ def lambda_handler(event, context):
                 "statusCode": 500,
                 "body": json.dumps({"error": str(e.reason)})
             }
+
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
